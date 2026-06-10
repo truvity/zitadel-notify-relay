@@ -1,0 +1,75 @@
+project_name: zitadel-notify-relay
+
+version: 2
+
+builds:
+  - id: zitadel-notify-relay
+    main: ./cmd/zitadel-notify-relay
+    binary: zitadel-notify-relay
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
+
+archives:
+  - id: lambda-zip
+    formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: bootstrap
+        dst: .
+        info:
+          mode: 0755
+
+kos:
+  - id: zitadel-notify-relay
+    build: zitadel-notify-relay
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .IsSnapshot }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    bare: true
+    preserve_import_paths: false
+    base_import_paths: true
+    base_image: gcr.io/distroless/static:nonroot
+    sbom: none
+    labels:
+      org.opencontainers.image.title: zitadel-notify-relay
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: https://github.com/truvity/zitadel-notify-relay
+
+release:
+  github:
+    owner: truvity
+    name: zitadel-notify-relay
+  header: |
+    ## Zitadel Notify Relay {{ .Tag }}
+
+    Docker image: `ghcr.io/truvity/zitadel-notify-relay:{{ .Version }}`
+    Helm chart: `oci://ghcr.io/truvity/charts/zitadel-notify-relay:{{ .Version }}`
+
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: '^feat'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^fix'
+      order: 1
+    - title: Other
+      order: 999
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
