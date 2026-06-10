@@ -63,3 +63,41 @@ Start with pass-through, add custom templates later.
 - Helm chart: `oci://ghcr.io/truvity/charts/zitadel-notify-relay`
 - Lambda ZIP: GitHub Release asset (linux/amd64, linux/arm64)
 - Raw binaries: GitHub Release asset (linux + darwin, amd64 + arm64)
+
+
+## Testing
+
+### Unit tests (CI)
+- Payload parsing (email + SMS notification structs)
+- Provider selection logic
+- Template rendering (pass-through mode)
+- Mock provider interface
+
+### Integration tests (local only, `//go:build integration`)
+
+**Dependencies:**
+- Docker (for LocalStack)
+- LocalStack Community Edition (free, Apache 2.0) — emulates AWS SES + SNS
+
+**Config:** `~/.config/zitadel-notify-relay/config.yaml`
+```yaml
+email:
+  backend: ses
+  ses:
+    endpoint: http://localhost:4566
+    region: us-east-1
+sms:
+  backend: sns
+  sns:
+    endpoint: http://localhost:4566
+    region: us-east-1
+```
+
+**No keyring needed** — LocalStack requires no real AWS credentials.
+
+**Setup:**
+```bash
+docker run -d --name localstack -p 4566:4566 localstack/localstack
+```
+
+**Run:** `go test -tags=integration ./tests/integration/...`
